@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Market Radar</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07090d;
+    --surface: #0c1018;
+    --border: #1a2332;
+    --green: #00e87a;
+    --yellow: #f5c400;
+    --red: #ff3355;
+    --grey: #4a5568;
+    --text: #dde4ee;
+    --dim: #6b7a90;
+    --accent: #00b8ff;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { background:var(--bg); color:var(--text); font-family:'DM Sans',sans-serif; min-height:100vh; }
+
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(0,184,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,184,255,0.025) 1px, transparent 1px);
+    background-size:40px 40px;
+    pointer-events:none; z-index:0;
+  }
+
+  .wrap { position:relative; z-index:1; max-width:480px; margin:0 auto; padding:20px 14px 40px; }
+
+  /* Header */
+  .hdr { margin-bottom:6px; }
+  .hdr h1 { font-family:'Bebas Neue',sans-serif; font-size:3rem; letter-spacing:.06em; color:var(--accent); line-height:.9; }
+  .hdr-row { display:flex; align-items:flex-end; justify-content:space-between; margin-top:4px; }
+  .hdr-sub { font-family:'Space Mono',monospace; font-size:.55rem; color:var(--dim); letter-spacing:.1em; text-transform:uppercase; }
+  .hdr-time { font-family:'Space Mono',monospace; font-size:.52rem; color:var(--dim); }
+
+  /* Refresh button */
+  .btn-refresh {
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    width:100%; padding:12px;
+    background:var(--surface); border:1px solid var(--border); border-radius:8px;
+    color:var(--accent); font-family:'Space Mono',monospace; font-size:.65rem;
+    letter-spacing:.08em; text-transform:uppercase; cursor:pointer;
+    margin:14px 0; transition:background .15s;
+  }
+  .btn-refresh:active { background:#111820; }
+  .btn-refresh.loading { opacity:.5; pointer-events:none; }
+  .spin { display:inline-block; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Loading */
+  #loading { display:flex; flex-direction:column; align-items:center; padding:60px 0; gap:16px; }
+  .ring { width:40px; height:40px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
+  .loading-txt { font-family:'Space Mono',monospace; font-size:.6rem; color:var(--dim); letter-spacing:.1em; text-transform:uppercase; animation:blink 1.2s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  #content { display:none; }
+
+  /* Risk bar */
+  .risk-bar { display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:8px; border-left:3px solid; margin-bottom:20px; font-family:'Space Mono',monospace; font-size:.62rem; letter-spacing:.02em; line-height:1.4; }
+  .rdot { width:8px; height:8px; border-radius:50%; flex-shrink:0; animation:pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.7)} }
+
+  /* Section */
+  .sec { font-family:'Space Mono',monospace; font-size:.52rem; text-transform:uppercase; letter-spacing:.16em; color:var(--dim); margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+
+  /* Cards */
+  .cards { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:13px 14px; display:flex; align-items:center; gap:12px; position:relative; overflow:hidden; }
+  .card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; }
+
+  .card-body { flex:1; min-width:0; }
+  .card-name { font-size:.82rem; font-weight:500; color:var(--text); margin-bottom:1px; }
+  .card-desc { font-size:.68rem; color:var(--dim); line-height:1.35; margin-bottom:6px; }
+  .card-vals { display:flex; gap:12px; flex-wrap:wrap; }
+  .val { display:flex; flex-direction:column; }
+  .val-lbl { font-family:'Space Mono',monospace; font-size:.48rem; text-transform:uppercase; letter-spacing:.08em; color:var(--grey); }
+  .val-num { font-family:'Space Mono',monospace; font-size:.72rem; font-weight:700; }
+
+  .badge { display:flex; flex-direction:column; align-items:center; justify-content:center; width:46px; height:46px; border-radius:8px; flex-shrink:0; }
+  .badge-ico { font-size:1rem; line-height:1; }
+  .badge-lbl { font-family:'Space Mono',monospace; font-size:.38rem; text-transform:uppercase; margin-top:2px; text-align:center; }
+
+  /* Signal colors */
+  .g::before { background:var(--green); }
+  .g .badge { background:rgba(0,232,122,.1); color:var(--green); }
+  .g .hl { color:var(--green); }
+
+  .y::before { background:var(--yellow); }
+  .y .badge { background:rgba(245,196,0,.1); color:var(--yellow); }
+  .y .hl { color:var(--yellow); }
+
+  .r::before { background:var(--red); }
+  .r .badge { background:rgba(255,51,85,.1); color:var(--red); }
+  .r .hl { color:var(--red); }
+
+  .gr::before { background:var(--grey); }
+  .gr .badge { background:rgba(74,85,104,.15); color:var(--grey); }
+  .gr .hl { color:var(--grey); }
+
+  /* Gauge */
+  .gauge-box { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:18px 14px; margin-bottom:20px; text-align:center; }
+  .gauge-ttl { font-family:'Space Mono',monospace; font-size:.52rem; text-transform:uppercase; letter-spacing:.14em; color:var(--dim); margin-bottom:12px; }
+  .gauge-svg { width:200px; overflow:visible; }
+  .gauge-lbl { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; letter-spacing:.04em; margin-top:6px; }
+  .gauge-sub { font-size:.75rem; color:var(--dim); margin-top:4px; line-height:1.4; }
+  .pills { display:flex; justify-content:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
+  .pill { font-family:'Space Mono',monospace; font-size:.52rem; padding:3px 10px; border-radius:20px; }
+
+  /* AFP */
+  .afp-box { background:linear-gradient(135deg,rgba(0,184,255,.04),rgba(0,232,122,.04)); border:1px solid rgba(0,184,255,.15); border-radius:10px; padding:16px 14px; margin-bottom:20px; }
+  .afp-ttl { font-family:'Space Mono',monospace; font-size:.52rem; text-transform:uppercase; letter-spacing:.12em; color:var(--accent); margin-bottom:10px; }
+  .rule { display:flex; align-items:flex-start; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.04); font-size:.76rem; line-height:1.45; }
+  .rule:last-child { border-bottom:none; }
+  .rule-ico { flex-shrink:0; width:20px; }
+  .rule strong { color:var(--accent); font-weight:500; }
+
+  /* Analysis */
+  .analysis { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 14px; margin-bottom:20px; }
+  .analysis-ttl { font-family:'Space Mono',monospace; font-size:.52rem; text-transform:uppercase; letter-spacing:.12em; color:var(--dim); margin-bottom:8px; }
+  .analysis-body { font-size:.78rem; line-height:1.65; color:var(--dim); }
+  .analysis-body strong { color:var(--text); font-weight:500; }
+
+  /* IPO */
+  .ipo-list { display:flex; flex-direction:column; gap:7px; margin-bottom:20px; }
+  .ipo-item { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:11px 14px; display:flex; gap:10px; align-items:flex-start; }
+  .ipo-dot { width:9px; height:9px; border-radius:50%; margin-top:4px; flex-shrink:0; }
+  .ipo-date { font-family:'Space Mono',monospace; font-size:.55rem; color:var(--dim); text-transform:uppercase; letter-spacing:.06em; margin-bottom:1px; }
+  .ipo-txt { font-size:.78rem; color:var(--text); line-height:1.35; }
+
+  /* Error */
+  .err-box { background:rgba(255,51,85,.08); border:1px solid rgba(255,51,85,.25); border-radius:10px; padding:16px; margin-bottom:20px; font-family:'Space Mono',monospace; font-size:.65rem; color:#ff3355; line-height:1.6; }
+
+  footer { font-family:'Space Mono',monospace; font-size:.48rem; color:var(--grey); text-align:center; letter-spacing:.05em; padding-top:14px; border-top:1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hdr">
+    <h1>Market<br>Radar</h1>
+    <div class="hdr-row">
+      <div class="hdr-sub">AFP Fondo A + IBKR</div>
+      <div class="hdr-time" id="ts">—</div>
+    </div>
+  </div>
+
+  <button class="btn-refresh" id="btn" onclick="loadAll()">
+    <span id="btnIco">⟳</span> Actualizar datos
+  </button>
+
+  <div id="loading">
+    <div class="ring"></div>
+    <div class="loading-txt">Consultando FRED + análisis IA...</div>
+  </div>
+
+  <div id="content">
+    <div id="errBox"></div>
+    <div id="riskBar" class="risk-bar"></div>
+
+    <p class="sec">01 — Macro USA</p>
+    <div class="cards" id="macroCards"></div>
+
+    <p class="sec">02 — Termómetro global</p>
+    <div class="gauge-box">
+      <div class="gauge-ttl">Riesgo de corrección estimado</div>
+      <svg class="gauge-svg" id="gaugeSvg" viewBox="0 0 200 115"></svg>
+      <div class="gauge-lbl" id="gaugeLbl">—</div>
+      <div class="gauge-sub" id="gaugeSub">—</div>
+      <div class="pills" id="pills"></div>
+    </div>
+
+    <p class="sec">03 — Reglas AFP Habitat Fondo A</p>
+    <div class="afp-box">
+      <div class="afp-ttl">¿Cuándo cambiar de fondo?</div>
+      <div class="rule"><div class="rule-ico">🟢</div><div><strong>Mantén Fondo A</strong> si los indicadores están mayoritariamente en verde. Situación actual.</div></div>
+      <div class="rule"><div class="rule-ico">🟡</div><div><strong>Evalúa Fondo B</strong> si 3+ indicadores en rojo + mercado bajo MA200 por 2 semanas.</div></div>
+      <div class="rule"><div class="rule-ico">🔴</div><div><strong>Mueve a Fondo B/C</strong> si Sahm activada + spreads >500 bps + curva re-normalizada. Recesión confirmada.</div></div>
+      <div class="rule"><div class="rule-ico">📅</div><div><strong>Rebalanceo planificado:</strong> A los <strong>55 años</strong> → mover 10% a Fondo B, independiente del mercado.</div></div>
+    </div>
+
+    <p class="sec">04 — IPO Watch 2026</p>
+    <div class="ipo-list">
+      <div class="ipo-item">
+        <div class="ipo-dot" style="background:#ff3355"></div>
+        <div><div class="ipo-date">~12 Junio 2026 · SpaceX (SPCX)</div><div class="ipo-txt">Valoración $1.75T · Raise $50–75B · El mayor IPO de la historia</div></div>
+      </div>
+      <div class="ipo-item">
+        <div class="ipo-dot" style="background:#f5c400"></div>
+        <div><div class="ipo-date">Septiembre 2026 · OpenAI</div><div class="ipo-txt">Valoración $852B–$1T · S-1 confidencial presentado</div></div>
+      </div>
+      <div class="ipo-item">
+        <div class="ipo-dot" style="background:#f5c400"></div>
+        <div><div class="ipo-date">Octubre 2026 · Anthropic</div><div class="ipo-txt">Valoración $900B · Goldman, JPMorgan, Morgan Stanley</div></div>
+      </div>
+      <div class="ipo-item">
+        <div class="ipo-dot" style="background:#00b8ff"></div>
+        <div><div class="ipo-date">Señal clave</div><div class="ipo-txt">Observar reacción de NVDA y semiconductores post-listing SpaceX</div></div>
+      </div>
+    </div>
+
+    <p class="sec">05 — Análisis IA</p>
+    <div class="analysis">
+      <div class="analysis-ttl">Interpretación contextual · generado por IA</div>
+      <div class="analysis-body" id="analysisBody">—</div>
+    </div>
+
+    <footer>MARKET RADAR · JOSÉ NICOLÁS · NO CONSTITUYE ASESORÍA FINANCIERA</footer>
+  </div>
+
+</div>
+<script>
+const FRED = '32819bd9f92a00bd3a705dba963e209a';
+
+// ── FRED fetch ──────────────────────────────────────────
+async function fredSeries(id, limit=5) {
+  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${id}&api_key=${FRED}&file_type=json&sort_order=desc&limit=${limit}`;
+  const r = await fetch(url);
+  const d = await r.json();
+  const obs = d.observations.filter(o => o.value !== '.');
+  return obs.length ? parseFloat(obs[0].value) : null;
+}
+
+// ── Signal logic ────────────────────────────────────────
+function vixSig(v)     { return v===null?'gr': v<20?'g': v<30?'y':'r'; }
+function sahmSig(v)    { return v===null?'gr': v<0.3?'g': v<0.5?'y':'r'; }
+function curveSig(v)   { return v===null?'gr': v>=0?'g': v>=-0.3?'y':'r'; }
+function spreadsSig(v) { return v===null?'gr': v<350?'g': v<500?'y':'r'; }
+
+const SIG = {
+  g:  { icon:'✅', lbl:'Normal',  color:'#00e87a' },
+  y:  { icon:'⚠️', lbl:'Alerta',  color:'#f5c400' },
+  r:  { icon:'🔴', lbl:'Peligro', color:'#ff3355' },
+  gr: { icon:'❓', lbl:'Sin dato',color:'#4a5568' },
+};
+
+// ── Card builder ────────────────────────────────────────
+function card(sig, name, desc, hlVal, extras=[]) {
+  const s = SIG[sig];
+  const exHtml = extras.map(([l,v])=>`
+    <div class="val"><span class="val-lbl">${l}</span><span class="val-num">${v}</span></div>`).join('');
+  return `<div class="${sig}"><div class="card">
+    <div class="card-body">
+      <div class="card-name">${name}</div>
+      <div class="card-desc">${desc}</div>
+      <div class="card-vals">
+        <div class="val"><span class="val-lbl">Actual</span><span class="val-num hl">${hlVal??'N/D'}</span></div>
+        ${exHtml}
+      </div>
+    </div>
+    <div class="badge"><span class="badge-ico">${s.icon}</span><span class="badge-lbl">${s.lbl}</span></div>
+  </div></div>`;
+}
+
+// ── Gauge ───────────────────────────────────────────────
+function drawGauge(pct, color) {
+  const cx=100,cy=95,r=72;
+  function pt(deg,rad) {
+    const a=(deg-90)*Math.PI/180;
+    return [cx+rad*Math.cos(a), cy+rad*Math.sin(a)];
+  }
+  function arc(a1,a2,col,op=0.22) {
+    const [x1,y1]=pt(a1,r), [x2,y2]=pt(a2,r);
+    const lg=(a2-a1)>180?1:0;
+    return `<path d="M${x1} ${y1} A${r} ${r} 0 ${lg} 1 ${x2} ${y2}" fill="none" stroke="${col}" stroke-width="13" stroke-linecap="round" opacity="${op}"/>`;
+  }
+  const s=-205, sw=230;
+  const fillEnd = s + sw * Math.min(Math.max(pct,0),1);
+  const [nx,ny]=pt(fillEnd,r);
+  return arc(s,s+sw,'#1a2332',1)
+    + arc(s,s+sw*.35,'#00e87a')
+    + arc(s+sw*.35,s+sw*.65,'#f5c400')
+    + arc(s+sw*.65,s+sw,'#ff3355')
+    + arc(s,fillEnd,color,1)
+    + `<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+       <circle cx="${cx}" cy="${cy}" r="5" fill="${color}"/>
+       <circle cx="${cx}" cy="${cy}" r="2.5" fill="#07090d"/>
+       <text x="18" y="112" fill="#00e87a" font-size="9" font-family="Space Mono" text-anchor="middle">BAJO</text>
+       <text x="100" y="18" fill="#f5c400" font-size="9" font-family="Space Mono" text-anchor="middle">MEDIO</text>
+       <text x="182" y="112" fill="#ff3355" font-size="9" font-family="Space Mono" text-anchor="middle">ALTO</text>`;
+}
+
+// ── Claude analysis ─────────────────────────────────────
+async function getAnalysis(indicators) {
+  const prompt = `Eres analista financiero. Datos de mercado actuales:
+- VIX: ${indicators.vix??'N/D'} (señal: ${indicators.vixSig})
+- Curva 10Y-2Y: ${indicators.curve??'N/D'}% (señal: ${indicators.curveSig})
+- Credit Spreads HY: ${indicators.spreads??'N/D'} bps (señal: ${indicators.spreadsSig})
+- Regla de Sahm: ${indicators.sahm??'N/D'} (señal: ${indicators.sahmSig})
+- CAPE Shiller aproximado: ~37 (alerta)
+- Buffett Indicator aproximado: ~190% (alerta)
+
+Escribe un análisis de 3 oraciones en español, directo y sin rodeos, sobre:
+1. Qué señala el conjunto de indicadores hoy
+2. Qué implica para alguien con Fondo A en AFP Habitat (horizonte 22 años) + ETFs VOO/VTI/SCHD/VGT en IBKR
+3. El riesgo específico de los mega-IPOs SpaceX/OpenAI/Anthropic en 2026
+
+Responde SOLO con el texto del análisis, sin introducción ni formato.`;
+
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'claude-sonnet-4-20250514',
+      max_tokens:300,
+      messages:[{role:'user',content:prompt}]
+    })
+  });
+  const d = await r.json();
+  return d.content?.[0]?.text || null;
+}
+
+// ── Main ────────────────────────────────────────────────
+async function loadAll() {
+  document.getElementById('loading').style.display='flex';
+  document.getElementById('content').style.display='none';
+  document.getElementById('btn').classList.add('loading');
+  document.getElementById('errBox').innerHTML='';
+
+  try {
+    // Fetch FRED in parallel
+    const [vix, sahm, t10, t2, spreads] = await Promise.all([
+      fredSeries('VIXCLS'),
+      fredSeries('SAHMREALTIME'),
+      fredSeries('DGS10'),
+      fredSeries('DGS2'),
+      fredSeries('BAMLH0A0HYM2'),
+    ]);
+
+    const curve = (t10!==null && t2!==null) ? parseFloat((t10-t2).toFixed(2)) : null;
+
+    const vs  = vixSig(vix);
+    const ss  = sahmSig(sahm);
+    const cs  = curveSig(curve);
+    const sps = spreadsSig(spreads);
+
+    // Score
+    const sigArr = [vs,ss,cs,sps];
+    const w = {g:0,y:1,r:2,gr:1};
+    const score = sigArr.reduce((a,s)=>a+w[s],0);
+    const pct = score/(sigArr.length*2);
+
+    let riskLbl, riskColor, riskDesc;
+    if(pct<0.30)      { riskLbl='RIESGO BAJO';          riskColor='#00e87a'; riskDesc='Condiciones normales. Mantén Fondo A.'; }
+    else if(pct<0.60) { riskLbl='RIESGO MODERADO-ALTO'; riskColor='#f5c400'; riskDesc='Señales mixtas. Monitoreo mensual recomendado.'; }
+    else              { riskLbl='RIESGO ALTO';           riskColor='#ff3355'; riskDesc='Múltiples alertas. Evalúa rebalanceo AFP.'; }
+
+    // Risk bar
+    const rb = document.getElementById('riskBar');
+    rb.style.borderColor=riskColor; rb.style.background=riskColor+'12'; rb.style.color=riskColor;
+    rb.innerHTML=`<div class="rdot" style="background:${riskColor}"></div><span>${riskLbl} — ${riskDesc}</span>`;
+
+    // Cards
+    document.getElementById('macroCards').innerHTML =
+      card(vs,  'VIX — Volatilidad',
+        'Bajo 20 = calma. Sobre 30 = pánico. Sobre 40 = crisis.',
+        vix?.toFixed(1)??'N/D',
+        [['Alerta','>30'],['Crisis COVID','85']]
+      ) +
+      card(cs,  'Curva 10Y–2Y',
+        'Positiva = normal. Re-normalización post-inversión = recesión próxima.',
+        curve!==null?(curve>=0?'+':'')+curve+'%':'N/D',
+        [['10Y',t10+'%'],['2Y',t2+'%']]
+      ) +
+      card(sps, 'Credit Spreads HY',
+        'Sobre 500 bps el crédito se tensa y el mercado suele caer.',
+        spreads?spreads.toFixed(0)+' bps':'N/D',
+        [['Alerta','>500 bps'],['Crisis 08','~2000 bps']]
+      ) +
+      card(ss,  'Regla de Sahm',
+        'Sobre 0.50 indica inicio de recesión en USA.',
+        sahm?.toFixed(2)??'N/D',
+        [['Umbral','0.50'],['Estado',sahm>=0.5?'⚠️ ACTIVA':'Inactiva']]
+      );
+
+    // Gauge
+    document.getElementById('gaugeSvg').innerHTML = drawGauge(pct, riskColor);
+    document.getElementById('gaugeLbl').textContent = riskLbl;
+    document.getElementById('gaugeLbl').style.color = riskColor;
+    document.getElementById('gaugeSub').textContent = riskDesc;
+    const rc = sigArr.filter(s=>s==='r').length;
+    const yc = sigArr.filter(s=>s==='y').length;
+    const gc = sigArr.filter(s=>s==='g').length;
+    document.getElementById('pills').innerHTML =
+      `<span class="pill" style="background:rgba(255,51,85,.12);color:#ff3355">${rc} rojo</span>
+       <span class="pill" style="background:rgba(245,196,0,.12);color:#f5c400">${yc} alerta</span>
+       <span class="pill" style="background:rgba(0,232,122,.12);color:#00e87a">${gc} normal</span>`;
+
+    // Analysis
+    document.getElementById('analysisBody').textContent = 'Generando análisis...';
+    try {
+      const analysis = await getAnalysis({vix,sahm,curve,spreads,vixSig:vs,sahmSig:ss,curveSig:cs,spreadsSig:sps});
+      document.getElementById('analysisBody').innerHTML = analysis
+        ? analysis.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+        : 'Análisis no disponible en este momento.';
+    } catch(e) {
+      document.getElementById('analysisBody').textContent = 'Análisis IA no disponible. Los datos de FRED se cargaron correctamente.';
+    }
+
+    // Timestamp
+    document.getElementById('ts').textContent = new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+
+    document.getElementById('loading').style.display='none';
+    document.getElementById('content').style.display='block';
+
+  } catch(e) {
+    document.getElementById('loading').style.display='none';
+    document.getElementById('content').style.display='block';
+    document.getElementById('errBox').innerHTML=`
+      <div class="err-box">
+        Error al cargar datos: ${e.message}<br><br>
+        Verifica tu conexión a internet e intenta nuevamente.
+      </div>`;
+  }
+
+  document.getElementById('btn').classList.remove('loading');
+}
+
+loadAll();
+</script>
+</body>
+</html>
