@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -217,11 +217,11 @@
 
 </div>
 <script>
-const FRED = '32819bd9f92a00bd3a705dba963e209a';
+const PROXY = 'https://market-radar-proxy.joseanrique.workers.dev';
 
-// ── FRED fetch ──────────────────────────────────────────
+// ── FRED fetch (via proxy — la API key vive en el servidor, no aquí) ────
 async function fredSeries(id, limit=5) {
-  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=${id}&api_key=${FRED}&file_type=json&sort_order=desc&limit=${limit}`;
+  const url = `${PROXY}/fred?series_id=${id}&limit=${limit}`;
   const r = await fetch(url);
   const d = await r.json();
   const obs = d.observations.filter(o => o.value !== '.');
@@ -427,3 +427,4 @@ loadAll();
 </script>
 </body>
 </html>
+
