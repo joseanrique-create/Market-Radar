@@ -326,13 +326,15 @@ async function loadAll() {
 
   try {
     // Fetch FRED in parallel
-    const [vix, sahm, t10, t2, spreads] = await Promise.all([
+    const [vix, sahm, t10, t2, spreadsPct] = await Promise.all([
       fredSeries('VIXCLS'),
       fredSeries('SAHMREALTIME'),
       fredSeries('DGS10'),
       fredSeries('DGS2'),
       fredSeries('BAMLH0A0HYM2'),
     ]);
+    // FRED reports BAMLH0A0HYM2 in percent (e.g. 2.71 = 2.71%) — convert to bps for the thresholds/labels below.
+    const spreads = spreadsPct !== null ? spreadsPct * 100 : null;
 
     const curve = (t10!==null && t2!==null) ? parseFloat((t10-t2).toFixed(2)) : null;
 
