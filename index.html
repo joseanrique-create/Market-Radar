@@ -299,22 +299,42 @@ async function getAnalysis(indicators) {
 
 Escribe un análisis de 3 oraciones en español, directo y sin rodeos, sobre:
 1. Qué señala el conjunto de indicadores hoy
-2. Qué implica para alguien con Fondo A en AFP Habitat (horizonte 22 años) + ETFs VOO/VTI/SCHD/VGT en IBKR
+2. Qué implica para alguien con Fondo A en AFP Habitat (horizonte 23 años) + ETFs VOO/VTI/SCHD/VGT en IBKR
 3. El riesgo específico de los mega-IPOs SpaceX/OpenAI/Anthropic en 2026
 
 Responde SOLO con el texto del análisis, sin introducción ni formato.`;
 
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({
-      model:'claude-sonnet-4-20250514',
-      max_tokens:300,
-      messages:[{role:'user',content:prompt}]
-    })
-  });
-  const d = await r.json();
-  return d.content?.[0]?.text || null;
+  // La API key de Anthropic vive en el Worker (nunca en el navegador). El Worker fija el modelo.
+  try {
+    const r = await fetch(`${PROXY}/analysis`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ prompt, max_tokens:300 })
+    });
+    if (r.ok) {
+      const d = await r.json();
+      const txt = d.content?.[0]?.text;
+      if (txt) return { text: txt, ia: true };
+    }
+  } catch(e) { /* cae al análisis local */ }
+  return { text: localAnalysis(indicators), ia: false };
+}
+
+// ── Análisis local (respaldo si el Worker no tiene /analysis) ──────────
+function localAnalysis(i) {
+  const sigs = [i.vixSig, i.sahmSig, i.curveSig, i.spreadsSig];
+  const rojos = sigs.filter(s=>s==='r').length;
+  const alertas = sigs.filter(s=>s==='y').length;
+  const f = (v,suf='') => v===null||v===undefined ? 'N/D' : v+suf;
+  let s1;
+  if (rojos>=3) s1 = `Los indicadores muestran estrés amplio (${rojos} en rojo): VIX ${f(i.vix)}, curva ${f(i.curve,'%')}, spreads ${f(i.spreads&&Math.round(i.spreads),' bps')}, Sahm ${f(i.sahm)}.`;
+  else if (rojos+alertas>=2) s1 = `Las señales son mixtas (${rojos} en rojo, ${alertas} en alerta): VIX ${f(i.vix)}, curva ${f(i.curve,'%')}, spreads ${f(i.spreads&&Math.round(i.spreads),' bps')}, Sahm ${f(i.sahm)}.`;
+  else s1 = `Los indicadores de estrés están mayormente normales: VIX ${f(i.vix)}, curva ${f(i.curve,'%')}, spreads ${f(i.spreads&&Math.round(i.spreads),' bps')}, Sahm ${f(i.sahm)}.`;
+  const s2 = rojos>=3
+    ? 'Con horizonte de ~23 años conviene revisar tu mezcla con calma, sin vender por pánico; las caídas se recuperan, pero la edad de jubilación define cuánto riesgo puedes sostener.'
+    : 'Con horizonte de ~23 años, estas señales son motivo de seguimiento y no de cambio de fondo; el ciclo no es una razón para mover el ahorro previsional.';
+  const s3 = 'Los mega-IPOs concentran liquidez y atención en pocos nombres: pueden drenar capital de otras acciones y dar volatilidad a la tecnología, así que no conviene añadir exposición solo por el entusiasmo.';
+  return `${s1} ${s2} ${s3}`;
 }
 
 // ── Main ────────────────────────────────────────────────
@@ -399,9 +419,12 @@ async function loadAll() {
     document.getElementById('analysisBody').textContent = 'Generando análisis...';
     try {
       const analysis = await getAnalysis({vix,sahm,curve,spreads,vixSig:vs,sahmSig:ss,curveSig:cs,spreadsSig:sps});
-      document.getElementById('analysisBody').innerHTML = analysis
-        ? analysis.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-        : 'Análisis no disponible en este momento.';
+      document.getElementById('analysisBody').innerHTML = analysis.text
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+      document.querySelector('.analysis-ttl').textContent = analysis.ia
+        ? 'Interpretación contextual · generado por IA'
+        : 'Interpretación automática por reglas (IA no disponible)';
     } catch(e) {
       document.getElementById('analysisBody').textContent = 'Análisis IA no disponible. Los datos de FRED se cargaron correctamente.';
     }
