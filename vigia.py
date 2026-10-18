@@ -418,6 +418,8 @@ def main():
     if args.github_output and os.environ.get("GITHUB_OUTPUT"):
         if primera:
             titulo = f"{EMOJI[nivel]} Vigía: línea base inicial ({ETIQ[nivel]})"
+        elif not cambios:
+            titulo = f"{EMOJI[nivel]} Vigía: revisión manual, sin cambios ({ETIQ[nivel]})"
         elif len(cambios) == 1:
             c = cambios[0]
             titulo = (f"{EMOJI[c['ahora']]} Vigía: {c['nombre']} "
