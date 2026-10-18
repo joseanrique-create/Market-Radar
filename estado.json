@@ -1,0 +1,31 @@
+{
+  "actualizado": "2026-10-18T20:14:31Z",
+  "nivel": "amarillo",
+  "colores": {
+    "dd_sp": "verde",
+    "ma200_sp": "verde",
+    "dd_ndx": "amarillo",
+    "vix": "verde",
+    "term": "verde",
+    "spread_hy": "verde",
+    "curva": "verde",
+    "sahm": "verde"
+  },
+  "valores": {
+    "dd_sp": -2.0397961203057258,
+    "ma200_sp": 5.336004310523013,
+    "dd_ndx": -5.289025080298115,
+    "vix": 19.989999771118164,
+    "term": 0.5100002288818359,
+    "spread_hy": 323.0,
+    "curva": 0.33000000000000007,
+    "sahm": 0.0
+  },
+  "contexto": {
+    "sp500": 7659.43994140625,
+    "sp500_fecha": "2026-10-16",
+    "t10": 5.1,
+    "usdclp": 984.3800048828125,
+    "usdclp_max52": 984.8599853515625
+  }
+}
