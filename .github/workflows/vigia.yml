@@ -1,0 +1,86 @@
+name: Vigia de mercado
+
+# Corre en los servidores de GitHub, no en el PC de Nicolas.
+# 22:00 UTC de lunes a viernes = despues del cierre de Nueva York en
+# cualquiera de los dos horarios de verano (cierre 20:00 o 21:00 UTC).
+# En Chile eso cae ~19:00 en verano y ~18:00 en invierno.
+
+on:
+  schedule:
+    - cron: "0 22 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      forzar_aviso:
+        description: "Abrir issue aunque no haya cambios de color"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write   # para versionar estado.json
+  issues: write     # para abrir el aviso
+
+concurrency:
+  group: vigia
+  cancel-in-progress: false
+
+jobs:
+  vigilar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install --quiet requests
+
+      - name: Medir indicadores
+        id: vigia
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: python vigia.py --md reporte.md --github-output
+
+      - name: Resumen en el log del run
+        run: cat reporte.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Asegurar etiquetas
+        if: steps.vigia.outputs.avisar == 'true' || inputs.forzar_aviso
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh label create vigia --color 1d76db --description "Aviso automatico del vigia" 2>/dev/null || true
+          gh label create empeora --color d93f0b --description "Un indicador empeoro" 2>/dev/null || true
+          gh label create mejora  --color 0e8a16 --description "Un indicador mejoro"  2>/dev/null || true
+
+      - name: Abrir aviso
+        if: steps.vigia.outputs.avisar == 'true' || inputs.forzar_aviso
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TITULO: ${{ steps.vigia.outputs.titulo }}
+          EMPEORA: ${{ steps.vigia.outputs.empeora }}
+        run: |
+          EXTRA=mejora
+          if [ "$EMPEORA" = "true" ]; then EXTRA=empeora; fi
+          printf '\n\n---\n[Dashboard en vivo](https://joseanrique-create.github.io/Market-Radar/) · [Este run](%s/%s/actions/runs/%s)\n' \
+            "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> reporte.md
+          gh issue create \
+            --title "${TITULO:-Vigia de mercado}" \
+            --body-file reporte.md \
+            --label vigia --label "$EXTRA" \
+            --assignee "${GITHUB_REPOSITORY_OWNER}"
+
+      - name: Versionar estado
+        run: |
+          if [ -n "$(git status --porcelain estado.json)" ]; then
+            git config user.name  "vigia-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add estado.json
+            git commit -m "vigia: estado $(date -u +%Y-%m-%d) [skip ci]"
+            git push
+          else
+            echo "estado.json sin cambios"
+          fi
