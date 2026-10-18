@@ -63,14 +63,18 @@ jobs:
           TITULO: ${{ steps.vigia.outputs.titulo }}
           EMPEORA: ${{ steps.vigia.outputs.empeora }}
         run: |
-          EXTRA=mejora
-          if [ "$EMPEORA" = "true" ]; then EXTRA=empeora; fi
+          ETIQS="--label vigia"
+          case "$EMPEORA" in
+            true)  ETIQS="$ETIQS --label empeora" ;;
+            false) ETIQS="$ETIQS --label mejora"  ;;
+            *)     ;;   # linea base: sin direccion, no etiqueta nada
+          esac
           printf '\n\n---\n[Dashboard en vivo](https://joseanrique-create.github.io/Market-Radar/) · [Este run](%s/%s/actions/runs/%s)\n' \
             "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> reporte.md
           gh issue create \
             --title "${TITULO:-Vigia de mercado}" \
             --body-file reporte.md \
-            --label vigia --label "$EXTRA" \
+            $ETIQS \
             --assignee "${GITHUB_REPOSITORY_OWNER}"
 
       - name: Versionar estado
