@@ -122,6 +122,21 @@
   .rule-ico { flex-shrink:0; width:20px; }
   .rule strong { color:var(--accent); font-weight:500; }
 
+  /* Proyección AFP */
+  .proj { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 14px; margin-bottom:20px; }
+  .proj-in { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px; }
+  .proj-in label { font-family:'Space Mono',monospace; font-size:.48rem; text-transform:uppercase; letter-spacing:.08em; color:var(--grey); display:flex; flex-direction:column; gap:3px; }
+  .proj-in input, .proj-in select { background:var(--bg); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'Space Mono',monospace; font-size:.72rem; padding:7px 8px; width:100%; }
+  .proj-tbl { width:100%; border-collapse:collapse; font-family:'Space Mono',monospace; font-size:.58rem; margin-top:6px; }
+  .proj-tbl th { color:var(--grey); font-weight:400; text-transform:uppercase; letter-spacing:.06em; font-size:.46rem; text-align:right; padding:4px 3px; border-bottom:1px solid var(--border); }
+  .proj-tbl th:first-child, .proj-tbl td:first-child { text-align:left; }
+  .proj-tbl td { text-align:right; padding:6px 3px; border-bottom:1px solid rgba(255,255,255,.04); }
+  .proj-tbl tr.mine td { color:var(--accent); font-weight:700; }
+  .proj-note { font-size:.66rem; color:var(--dim); line-height:1.5; margin-top:10px; }
+  .proj-note strong { color:var(--text); font-weight:500; }
+  .proj-warn { border-left:3px solid var(--yellow); background:rgba(245,196,0,.07); padding:8px 10px; border-radius:6px; font-size:.68rem; line-height:1.5; margin-bottom:12px; }
+  #projChart { width:100%; height:150px; margin-top:10px; }
+
   /* Analysis */
   .analysis { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 14px; margin-bottom:20px; }
   .analysis-ttl { font-family:'Space Mono',monospace; font-size:.52rem; text-transform:uppercase; letter-spacing:.12em; color:var(--dim); margin-bottom:8px; }
@@ -183,22 +198,43 @@
       <div class="rule"><div class="rule-ico">🟢</div><div><strong>Mantén Fondo A</strong> si los indicadores están mayoritariamente en verde. Situación actual.</div></div>
       <div class="rule"><div class="rule-ico">🟡</div><div><strong>Evalúa Fondo B</strong> si 3+ indicadores en rojo + mercado bajo MA200 por 2 semanas.</div></div>
       <div class="rule"><div class="rule-ico">🔴</div><div><strong>Mueve a Fondo B/C</strong> si Sahm activada + spreads >500 bps + curva re-normalizada. Recesión confirmada.</div></div>
-      <div class="rule"><div class="rule-ico">📅</div><div><strong>Rebalanceo planificado:</strong> A los <strong>55 años</strong> → mover 10% a Fondo B, independiente del mercado.</div></div>
+      <div class="rule"><div class="rule-ico">📅</div><div><strong>Rebalanceo planificado:</strong> A los <strong>55 años</strong> → mover 10% a Fondo B, independiente del mercado. <em>Desde el 1-abr-2027 el obligatorio queda en Fondo Generacional (sin elegir): esta regla aplica solo al APV.</em></div></div>
     </div>
 
-    <p class="sec">04 — IPO Watch 2026</p>
+    <p class="sec">04 — Proyección fondos AFP</p>
+    <div class="proj">
+      <div class="proj-warn"><strong>1-abr-2027:</strong> desaparecen los multifondos A–E. El ahorro obligatorio pasa a Fondos Generacionales por año de nacimiento (sin elegir); el voluntario (APV) sí se elige, antes de fines de marzo de 2027. Esta proyección usa A–E como aproximación del perfil de riesgo.</div>
+      <div class="proj-in">
+        <label>Saldo actual (CLP)<input id="pjSaldo" type="text" inputmode="numeric" value="100.000.000"></label>
+        <label>Aporte mensual (CLP)<input id="pjAporte" type="text" inputmode="numeric" value="0"></label>
+        <label>Horizonte (años)<input id="pjAnios" type="number" min="1" max="45" value="23"></label>
+        <label>Tu mezcla<select id="pjMezcla">
+          <option value="90A10E" selected>90% A + 10% E (tu cartera)</option>
+          <option value="100A">100% A</option>
+          <option value="50A50B">50% A + 50% B</option>
+          <option value="100B">100% B</option>
+          <option value="100C">100% C</option>
+        </select></label>
+      </div>
+      <p class="val-lbl" style="margin-bottom:2px">Saldo final en pesos de hoy (rentabilidad real, antes de comisiones)</p>
+      <table class="proj-tbl" id="projTbl"></table>
+      <svg id="projChart" viewBox="0 0 300 150" preserveAspectRatio="none"></svg>
+      <div class="proj-note" id="projNote"></div>
+    </div>
+
+    <p class="sec">05 — IPO Watch 2026</p>
     <div class="ipo-list">
       <div class="ipo-item">
         <div class="ipo-dot" style="background:#ff3355"></div>
-        <div><div class="ipo-date">~12 Junio 2026 · SpaceX (SPCX)</div><div class="ipo-txt">Valoración $1.75T · Raise $50–75B · El mayor IPO de la historia</div></div>
+        <div><div class="ipo-date">~12 Junio 2026 · SpaceX (SPCX) · fecha proyectada, verificar</div><div class="ipo-txt">Valoración $1.75T · Raise $50–75B · El mayor IPO de la historia</div></div>
       </div>
       <div class="ipo-item">
         <div class="ipo-dot" style="background:#f5c400"></div>
-        <div><div class="ipo-date">Septiembre 2026 · OpenAI</div><div class="ipo-txt">Valoración $852B–$1T · S-1 confidencial presentado</div></div>
+        <div><div class="ipo-date">Septiembre 2026 · OpenAI · fecha proyectada, verificar</div><div class="ipo-txt">Valoración $852B–$1T · S-1 confidencial presentado</div></div>
       </div>
       <div class="ipo-item">
         <div class="ipo-dot" style="background:#f5c400"></div>
-        <div><div class="ipo-date">Octubre 2026 · Anthropic</div><div class="ipo-txt">Valoración $900B · Goldman, JPMorgan, Morgan Stanley</div></div>
+        <div><div class="ipo-date">Octubre 2026 · Anthropic · fecha proyectada, verificar</div><div class="ipo-txt">Valoración $900B · Goldman, JPMorgan, Morgan Stanley</div></div>
       </div>
       <div class="ipo-item">
         <div class="ipo-dot" style="background:#00b8ff"></div>
@@ -206,7 +242,7 @@
       </div>
     </div>
 
-    <p class="sec">05 — Análisis IA</p>
+    <p class="sec">06 — Análisis IA</p>
     <div class="analysis">
       <div class="analysis-ttl">Interpretación contextual · generado por IA</div>
       <div class="analysis-body" id="analysisBody">—</div>
@@ -337,6 +373,105 @@ function localAnalysis(i) {
   return `${s1} ${s2} ${s3}`;
 }
 
+
+// ── Proyección fondos AFP ───────────────────────────────
+// Rentabilidad real promedio anual (CAGR) de AFP Habitat, sep-2002 a sep-2026
+// (fuente: afphabitat.cl, "Inversiones y Rentabilidad de los Fondos de Pensiones a Octubre 2026").
+// Actualizar a mano cada mes: cambia `corte` y los `cagr`. Volatilidad = SUPUESTO aproximado, no dato oficial.
+const AFP = {
+  corte: '2026-09-30',
+  fuente: 'AFP Habitat · sep-2002 a sep-2026',
+  fondos: {
+    A: { cagr:5.96, vol:11.0 },
+    B: { cagr:5.15, vol: 8.5 },
+    C: { cagr:4.38, vol: 6.5 },
+    D: { cagr:3.52, vol: 4.5 },
+    E: { cagr:2.77, vol: 3.5 },
+  },
+  mezclas: {
+    '90A10E': { A:.9, E:.1 }, '100A': { A:1 }, '50A50B': { A:.5, B:.5 }, '100B': { B:1 }, '100C': { C:1 },
+  },
+};
+
+function pjNum(id) { return parseFloat(String(document.getElementById(id).value).replace(/\./g,'').replace(',','.')) || 0; }
+function pjFmt(n) {
+  if (n >= 1e9) return '$' + (n/1e9).toFixed(2).replace('.',',') + ' mil M';
+  return '$' + Math.round(n/1e6).toLocaleString('es-CL') + ' M';
+}
+// RNG con semilla para que la proyección no cambie en cada recarga
+function pjRng(seed) { return function() { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed>>>15, 1|seed); t = t + Math.imul(t ^ t>>>7, 61|t) ^ t; return ((t ^ t>>>14) >>> 0) / 4294967296; }; }
+function pjNormal(rng) { let u=0,v=0; while(!u) u=rng(); while(!v) v=rng(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+
+// Simula N trayectorias anuales en términos reales. Rentabilidad log-normal con mediana = CAGR histórico.
+function pjSim(mu, sigma, saldo, aporteAnual, years, N, seed) {
+  const rng = pjRng(seed), m = Math.log(1+mu/100), sd = sigma/100;
+  const paths = [];
+  for (let i=0;i<N;i++) {
+    let v = saldo; const p = [v];
+    for (let y=0;y<years;y++) { v = (v + aporteAnual/2) * Math.exp(m + sd*pjNormal(rng)) + aporteAnual/2; p.push(v); }
+    paths.push(p);
+  }
+  const q = (arr, f) => { const a = arr.slice().sort((x,y)=>x-y); return a[Math.min(a.length-1, Math.floor(f*a.length))]; };
+  const out = { p10:[], p50:[], p90:[] };
+  for (let y=0;y<=years;y++) {
+    const col = paths.map(p=>p[y]);
+    out.p10.push(q(col,.10)); out.p50.push(q(col,.50)); out.p90.push(q(col,.90));
+  }
+  return out;
+}
+
+function renderProyeccion() {
+  const saldo = pjNum('pjSaldo'), aporte = pjNum('pjAporte')*12;
+  const years = Math.max(1, Math.min(45, parseInt(document.getElementById('pjAnios').value)||23));
+  const mezKey = document.getElementById('pjMezcla').value, mez = AFP.mezclas[mezKey];
+  try { localStorage.setItem('mr_proj', JSON.stringify({s:document.getElementById('pjSaldo').value,a:document.getElementById('pjAporte').value,y:years,m:mezKey})); } catch(e) {}
+
+  // mezcla: retorno ponderado; vol con correlación supuesta 0.7 entre fondos distintos
+  const parts = Object.entries(mez), rho = 0.7;
+  const mu = parts.reduce((a,[k,w])=>a+w*AFP.fondos[k].cagr,0);
+  let varr = 0;
+  parts.forEach(([k1,w1])=>parts.forEach(([k2,w2])=>{ varr += w1*w2*AFP.fondos[k1].vol*AFP.fondos[k2].vol*(k1===k2?1:rho); }));
+  const sig = Math.sqrt(varr);
+
+  const mezLabel = parts.map(([k,w])=>Math.round(w*100)+'% '+k).join(' + ');
+  const sims = {};
+  Object.keys(AFP.fondos).forEach(k => { sims[k] = pjSim(AFP.fondos[k].cagr, AFP.fondos[k].vol, saldo, aporte, years, 1500, 11); });
+  sims.mine = pjSim(mu, sig, saldo, aporte, years, 1500, 11);
+  const row = (k, lbl, cagr, cls) => { const s = sims[k]; return `<tr class="${cls||''}"><td>${lbl}</td><td>${cagr.toFixed(2).replace('.',',')}%</td><td>${pjFmt(s.p10[years])}</td><td>${pjFmt(s.p50[years])}</td><td>${pjFmt(s.p90[years])}</td></tr>`; };
+  document.getElementById('projTbl').innerHTML =
+    '<tr><th>Fondo</th><th>Real/año</th><th>Malo (P10)</th><th>Base (P50)</th><th>Bueno (P90)</th></tr>' +
+    row('mine', 'Tu mezcla ' + mezLabel, mu, 'mine') +
+    Object.keys(AFP.fondos).map(k => row(k, 'Fondo ' + k, AFP.fondos[k].cagr)).join('');
+
+  // gráfico de tu mezcla: banda P10–P90 y línea P50
+  const s = sims.mine, maxV = Math.max(...s.p90, saldo, 1), W=300, H=150, px = y => 4 + (W-8)*y/years, py = v => H-6 - (H-14)*v/maxV;
+  const pts = a => a.map((v,y)=>px(y).toFixed(1)+','+py(v).toFixed(1)).join(' ');
+  const back = s.p10.map((v,y)=>px(y).toFixed(1)+','+py(v).toFixed(1)).reverse().join(' ');
+  document.getElementById('projChart').innerHTML =
+    `<polygon points="${pts(s.p90)} ${back}" fill="rgba(0,184,255,.15)"/>` +
+    `<polyline points="${pts(s.p50)}" fill="none" stroke="#00b8ff" stroke-width="1.6"/>` +
+    `<line x1="4" y1="${py(saldo).toFixed(1)}" x2="${W-4}" y2="${py(saldo).toFixed(1)}" stroke="#4a5568" stroke-width=".6" stroke-dasharray="3 3"/>`;
+
+  const dias = Math.floor((Date.now() - new Date(AFP.corte).getTime())/86400000);
+  const stale = dias > 60 ? ` <strong style="color:var(--yellow)">⚠ Datos con ${dias} días: actualiza AFP.corte y AFP.fondos en index.html.</strong>` : '';
+  document.getElementById('projNote').innerHTML =
+    `Base: rentabilidad real promedio anual de Habitat (${AFP.fuente}). Montos en <strong>pesos de hoy</strong> (descontada la inflación), a ${years} años. ` +
+    `Banda = 1.500 simulaciones con volatilidad supuesta (A ${AFP.fondos.A.vol}%, E ${AFP.fondos.E.vol}%): P10 es el escenario malo, P90 el bueno. ` +
+    `El pasado no garantiza el futuro: el promedio histórico de A viene bajando (6,61% en 2012 → 5,96% hoy) y el Fondo E ha tenido pérdidas por swaps. ` +
+    `Es ilustrativo; no incluye comisiones ni cambios de fondo, y <strong>no es asesoría financiera</strong>.${stale}`;
+}
+function initProyeccion() {
+  try {
+    const d = JSON.parse(localStorage.getItem('mr_proj') || 'null');
+    if (d) {
+      document.getElementById('pjSaldo').value = d.s; document.getElementById('pjAporte').value = d.a;
+      document.getElementById('pjAnios').value = d.y; document.getElementById('pjMezcla').value = d.m;
+    }
+  } catch(e) {}
+  ['pjSaldo','pjAporte','pjAnios','pjMezcla'].forEach(id => document.getElementById(id).addEventListener('input', renderProyeccion));
+  renderProyeccion();
+}
+
 // ── Main ────────────────────────────────────────────────
 async function loadAll() {
   document.getElementById('loading').style.display='flex';
@@ -448,6 +583,7 @@ async function loadAll() {
   document.getElementById('btn').classList.remove('loading');
 }
 
+initProyeccion();
 loadAll();
 </script>
 </body>
