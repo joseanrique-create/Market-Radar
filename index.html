@@ -137,11 +137,6 @@
   .proj-warn { border-left:3px solid var(--yellow); background:rgba(245,196,0,.07); padding:8px 10px; border-radius:6px; font-size:.68rem; line-height:1.5; margin-bottom:12px; }
   #projChart { width:100%; height:150px; margin-top:10px; }
 
-  /* Analysis */
-  .analysis { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px 14px; margin-bottom:20px; }
-  .analysis-ttl { font-family:'Space Mono',monospace; font-size:.52rem; text-transform:uppercase; letter-spacing:.12em; color:var(--dim); margin-bottom:8px; }
-  .analysis-body { font-size:.78rem; line-height:1.65; color:var(--dim); }
-  .analysis-body strong { color:var(--text); font-weight:500; }
 
   /* IPO */
   .ipo-list { display:flex; flex-direction:column; gap:7px; margin-bottom:20px; }
@@ -173,7 +168,7 @@
 
   <div id="loading">
     <div class="ring"></div>
-    <div class="loading-txt">Consultando FRED + análisis IA...</div>
+    <div class="loading-txt">Consultando FRED...</div>
   </div>
 
   <div id="content">
@@ -240,12 +235,6 @@
         <div class="ipo-dot" style="background:#00b8ff"></div>
         <div><div class="ipo-date">Señal clave</div><div class="ipo-txt">Observar reacción de NVDA y semiconductores post-listing SpaceX</div></div>
       </div>
-    </div>
-
-    <p class="sec">06 — Análisis IA</p>
-    <div class="analysis">
-      <div class="analysis-ttl">Interpretación contextual · generado por IA</div>
-      <div class="analysis-body" id="analysisBody">—</div>
     </div>
 
     <footer>MARKET RADAR · JOSÉ NICOLÁS · NO CONSTITUYE ASESORÍA FINANCIERA</footer>
@@ -322,57 +311,6 @@ function drawGauge(pct, color) {
        <text x="100" y="18" fill="#f5c400" font-size="9" font-family="Space Mono" text-anchor="middle">MEDIO</text>
        <text x="182" y="112" fill="#ff3355" font-size="9" font-family="Space Mono" text-anchor="middle">ALTO</text>`;
 }
-
-// ── Claude analysis ─────────────────────────────────────
-async function getAnalysis(indicators) {
-  const prompt = `Eres analista financiero. Datos de mercado actuales:
-- VIX: ${indicators.vix??'N/D'} (señal: ${indicators.vixSig})
-- Curva 10Y-2Y: ${indicators.curve??'N/D'}% (señal: ${indicators.curveSig})
-- Credit Spreads HY: ${indicators.spreads??'N/D'} bps (señal: ${indicators.spreadsSig})
-- Regla de Sahm: ${indicators.sahm??'N/D'} (señal: ${indicators.sahmSig})
-- CAPE Shiller aproximado: ~37 (alerta)
-- Buffett Indicator aproximado: ~190% (alerta)
-
-Escribe un análisis de 3 oraciones en español, directo y sin rodeos, sobre:
-1. Qué señala el conjunto de indicadores hoy
-2. Qué implica para alguien con Fondo A en AFP Habitat (horizonte 23 años) + ETFs VOO/VTI/SCHD/VGT en IBKR
-3. El riesgo específico de los mega-IPOs SpaceX/OpenAI/Anthropic en 2026
-
-Responde SOLO con el texto del análisis, sin introducción ni formato.`;
-
-  // La API key de Anthropic vive en el Worker (nunca en el navegador). El Worker fija el modelo.
-  try {
-    const r = await fetch(`${PROXY}/analysis`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ prompt, max_tokens:300 })
-    });
-    if (r.ok) {
-      const d = await r.json();
-      const txt = d.content?.[0]?.text;
-      if (txt) return { text: txt, ia: true };
-    }
-  } catch(e) { /* cae al análisis local */ }
-  return { text: localAnalysis(indicators), ia: false };
-}
-
-// ── Análisis local (respaldo si el Worker no tiene /analysis) ──────────
-function localAnalysis(i) {
-  const sigs = [i.vixSig, i.sahmSig, i.curveSig, i.spreadsSig];
-  const rojos = sigs.filter(s=>s==='r').length;
-  const alertas = sigs.filter(s=>s==='y').length;
-  const f = (v,suf='') => v===null||v===undefined ? 'N/D' : v+suf;
-  let s1;
-  if (rojos>=3) s1 = `Los indicadores muestran estrés amplio (${rojos} en rojo): VIX ${f(i.vix)}, curva ${f(i.curve,'%')}, spreads ${f(i.spreads&&Math.round(i.spreads),' bps')}, Sahm ${f(i.sahm)}.`;
-  else if (rojos+alertas>=2) s1 = `Las señales son mixtas (${rojos} en rojo, ${alertas} en alerta): VIX ${f(i.vix)}, curva ${f(i.curve,'%')}, spreads ${f(i.spreads&&Math.round(i.spreads),' bps')}, Sahm ${f(i.sahm)}.`;
-  else s1 = `Los indicadores de estrés están mayormente normales: VIX ${f(i.vix)}, curva ${f(i.curve,'%')}, spreads ${f(i.spreads&&Math.round(i.spreads),' bps')}, Sahm ${f(i.sahm)}.`;
-  const s2 = rojos>=3
-    ? 'Con horizonte de ~23 años conviene revisar tu mezcla con calma, sin vender por pánico; las caídas se recuperan, pero la edad de jubilación define cuánto riesgo puedes sostener.'
-    : 'Con horizonte de ~23 años, estas señales son motivo de seguimiento y no de cambio de fondo; el ciclo no es una razón para mover el ahorro previsional.';
-  const s3 = 'Los mega-IPOs concentran liquidez y atención en pocos nombres: pueden drenar capital de otras acciones y dar volatilidad a la tecnología, así que no conviene añadir exposición solo por el entusiasmo.';
-  return `${s1} ${s2} ${s3}`;
-}
-
 
 // ── Proyección fondos AFP ───────────────────────────────
 // Rentabilidad real promedio anual (CAGR) de AFP Habitat, sep-2002 a sep-2026
@@ -549,20 +487,6 @@ async function loadAll() {
       `<span class="pill" style="background:rgba(255,51,85,.12);color:#ff3355">${rc} rojo</span>
        <span class="pill" style="background:rgba(245,196,0,.12);color:#f5c400">${yc} alerta</span>
        <span class="pill" style="background:rgba(0,232,122,.12);color:#00e87a">${gc} normal</span>`;
-
-    // Analysis
-    document.getElementById('analysisBody').textContent = 'Generando análisis...';
-    try {
-      const analysis = await getAnalysis({vix,sahm,curve,spreads,vixSig:vs,sahmSig:ss,curveSig:cs,spreadsSig:sps});
-      document.getElementById('analysisBody').innerHTML = analysis.text
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-        .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
-      document.querySelector('.analysis-ttl').textContent = analysis.ia
-        ? 'Interpretación contextual · generado por IA'
-        : 'Interpretación automática por reglas (IA no disponible)';
-    } catch(e) {
-      document.getElementById('analysisBody').textContent = 'Análisis IA no disponible. Los datos de FRED se cargaron correctamente.';
-    }
 
     // Timestamp
     document.getElementById('ts').textContent = new Date().toLocaleString('es-CL',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
