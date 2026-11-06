@@ -1,31 +1,31 @@
 {
-  "actualizado": "2026-11-05T01:56:01Z",
-  "nivel": "amarillo",
+  "actualizado": "2026-11-06T01:56:46Z",
+  "nivel": "rojo",
   "colores": {
-    "dd_sp": "verde",
+    "dd_sp": "amarillo",
     "ma200_sp": "verde",
-    "dd_ndx": "amarillo",
-    "vix": "verde",
-    "term": "verde",
+    "dd_ndx": "rojo",
+    "vix": "amarillo",
+    "term": "rojo",
     "spread_hy": "verde",
     "curva": "verde",
     "sahm": "verde"
   },
   "valores": {
-    "dd_sp": -1.6665970364766691,
-    "ma200_sp": 5.030841379526807,
-    "dd_ndx": -6.751049388115227,
-    "vix": 16.610000610351562,
-    "term": 2.1899986267089844,
-    "spread_hy": 340.0,
-    "curva": 0.33999999999999986,
+    "dd_sp": -5.949665553395455,
+    "ma200_sp": 0.42326077020045094,
+    "dd_ndx": -11.901507682491907,
+    "vix": 28.18000030517578,
+    "term": -2.6300010681152344,
+    "spread_hy": 332.0,
+    "curva": 0.3200000000000003,
     "sahm": 0.0
   },
   "contexto": {
-    "sp500": 7688.6201171875,
-    "sp500_fecha": "2026-11-04",
-    "t10": 4.95,
-    "usdclp": 981.3900146484375,
+    "sp500": 7353.72998046875,
+    "sp500_fecha": "2026-11-05",
+    "t10": 4.9,
+    "usdclp": 964.9299926757812,
     "usdclp_max52": 992.4199829101562
   }
 }
